@@ -107,12 +107,15 @@ def fieldSearch(api,  gmLibrary,  request):
                 "artist": candidate["artist"],
                 "track": candidate["title"],
                 "album":  candidate["album"],
+                "duration": candidate["durationMillis"] / 1000,
+                "albumPos": candidate["track"],
+                "discnumber": candidate["disc"],
+                "year": candidate["year"],
                 "score":1,
                 "url": url
                 }
             results.append( result )
 
-    logger.info('Found %d tracks in %d candidates'%(len(results),  len(gmLibrary)))
     response = {
             'qid': request['qid'],
             'results': results,
@@ -129,7 +132,8 @@ def main():
                     "_msgtype": "settings",
                     "name": "google music resolver",
                     "targettime": 100, # ms
-                    "weight": 80
+                    "weight": 80,
+                    "logoUrl": "gmusic-logo.png"
                     }
         printJson(settings)
 
