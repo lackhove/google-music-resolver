@@ -89,6 +89,38 @@ def simplify(s):
     return s
 
 
+def fieldSearch(api,  gmLibrary,  request):
+    logger.debug("searching for for %s", request)
+    results = []
+    seqMatchArtist = difflib.SequenceMatcher(None, "foobar", simplify( request["artist"] ))
+    seqMatchTitle = difflib.SequenceMatcher(None, "foobar", simplify( request["track"] ))
+    for candidate in gmLibrary:
+        seqMatchArtist.set_seq1( simplify( candidate["artist"] ) )
+        seqMatchTitle.set_seq1( simplify( candidate["title"] ) )
+        scoreArtist = seqMatchArtist.quick_ratio()
+        scoreTitle = seqMatchTitle.quick_ratio()
+        score = (scoreArtist + scoreTitle) /2
+        if score >= 0.8:
+            logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
+            url = api.get_stream_url(candidate["id"])
+            result = {
+                "artist": candidate["artist"],
+                "track": candidate["title"],
+                "album":  candidate["album"],
+                "score":1,
+                "url": url
+                }
+            results.append( result )
+
+    logger.info('Found %d tracks in %d candidates'%(len(results),  len(gmLibrary)))
+    response = {
+            'qid': request['qid'],
+            'results': results,
+            '_msgtype': 'results'
+        }
+    printJson(response)
+
+
 def main():
 
     try:
@@ -109,11 +141,12 @@ def main():
         logger.info("login succeeded")
 
         # Get all songs in the library
-        logger.debug("retrieving library tracks")
+        logger.info("retrieving library tracks")
         #gmLibrary = api.get_all_songs()
         import pickle
         #pickle.dump(gmLibrary, open( "gmLibrary.p", "wb" ) )
         gmLibrary = pickle.load( open( "gmLibrary.p", "rb" ) )
+        logger.info('%d tracks in library'%len(gmLibrary))
 
         while True:
             logger.debug("waiting for message length")
@@ -139,8 +172,7 @@ def main():
                     logger.debug("not handling searches for now")
                     continue
                 else:
-                    logger.debug("searching for for %s", request)
-                    continue
+                    fieldSearch(api,  gmLibrary,  request)
             elif request['_msgtype'] == 'config':
                 logger.debug("ignoring config message: %s", request)
             elif request['_msgtype'] == 'quit':
