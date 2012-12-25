@@ -108,12 +108,15 @@ def fieldSearch(api,  gmLibrary,  request):
                 "track": candidate["title"],
                 "album":  candidate["album"],
                 "duration": candidate["durationMillis"] / 1000,
-                "albumPos": candidate["track"],
-                "discnumber": candidate["disc"],
-                "year": candidate["year"],
                 "score":1,
                 "url": url
                 }
+            if candidate["year"] != 0:
+                result["year"] = candidate["year"]
+            if candidate["track"] != 0:
+                result["albumPos"] = candidate["track"]
+            if candidate["disc"] != 0:
+                result["discnumber"] = candidate["disc"]
             results.append( result )
 
     response = {
