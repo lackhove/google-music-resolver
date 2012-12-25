@@ -104,7 +104,11 @@ def fieldSearch(api,  gmLibrary,  request):
         if score >= 0.8:
             #logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
             #logger.debug("candidate: %s"%candidate)
-            url = api.get_stream_url(candidate["id"])
+            try:
+                url = api.get_stream_url(candidate["id"])
+            except:
+                logger.error("URL retrieval for %s failed"%candidate)
+                continue
             result = {
                 "artist": candidate["artist"],
                 "track": candidate["title"],
