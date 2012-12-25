@@ -1,0 +1,11 @@
+gmusic-resolver is primarily authored by:
+
+* Kilian lackhove <kilian.lackhove@gmail.com>
+
+And uses code from:
+
+* jazz-on-line resolver by David Laban https://github.com/alsuren/tomahawk-resolvers/tree/jazz-on-line/jazz-on-line
+
+Icon by:
+
+* ~carlosjj http://carlosjj.deviantart.com/art/Google-Music-Icon-PNG-ICO-512px-269499655
