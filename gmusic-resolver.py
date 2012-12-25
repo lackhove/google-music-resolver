@@ -181,6 +181,7 @@ def main():
             if len(bigEndianLength) < 4:
                 logger.debug("No length given (%r==EOF?). Exiting.",
                         bigEndianLength)
+                api.logout()
                 exit(0)
             length = unpack("!L", bigEndianLength)[0]
             if not length or not 4096 > length > 0:
@@ -203,6 +204,7 @@ def main():
                 logger.debug("ignoring config message: %s", request)
             elif request['_msgtype'] == 'quit':
                 logger.info("Asked to Quit. Exiting.")
+                api.logout()
                 exit(0)
             else:
                 logger.warn("unknown request: %s", request)
@@ -210,6 +212,8 @@ def main():
     except Exception:
         logger.exception("something went wrong")
         raise
+
+    api.logout()
 
 
 if __name__ == "__main__":
