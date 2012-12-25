@@ -20,7 +20,9 @@
 
 import sys
 import re
-#import os
+import os
+import time
+import pickle
 import json
 import difflib
 import logging
@@ -148,11 +150,20 @@ def main():
         logger.info("login succeeded")
 
         # Get all songs in the library
-        logger.info("retrieving library tracks")
-        #gmLibrary = api.get_all_songs()
-        import pickle
-        #pickle.dump(gmLibrary, open( "gmLibrary.p", "wb" ) )
-        gmLibrary = pickle.load( open( "gmLibrary.p", "rb" ) )
+        gmLibrary = []
+        filename = "gmLibrary.p"
+        if os.path.exists(filename):
+            t = os.path.getmtime(filename)
+            age = time.time() - t
+            logger.info("cached library age: %d seconds"%age)
+            if age <= 3600:
+                gmLibrary = pickle.load(open(filename) )
+                logger.info("loaded library tracks from file")
+
+        if len(gmLibrary) == 0:
+            logger.info("retrieving library tracks from google")
+            gmLibrary = api.get_all_songs()
+            pickle.dump(gmLibrary, open(filename, "wb" ) )
         logger.info('%d tracks in library'%len(gmLibrary))
 
         while True:
