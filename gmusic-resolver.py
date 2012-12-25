@@ -34,6 +34,7 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
+MIN_AVG_SCORE = 0.9
 
 def printJson(o):
     s = json.dumps(o)
@@ -96,13 +97,19 @@ def fieldSearch(api,  gmLibrary,  request):
     seqMatchArtist = difflib.SequenceMatcher(None, "foobar", simplify( request["artist"] ))
     seqMatchTitle = difflib.SequenceMatcher(None, "foobar", simplify( request["track"] ))
     for candidate in gmLibrary:
-        seqMatchArtist.set_seq1( simplify( candidate["artist"] ) )
         seqMatchTitle.set_seq1( simplify( candidate["title"] ) )
-        scoreArtist = seqMatchArtist.quick_ratio()
         scoreTitle = seqMatchTitle.quick_ratio()
+        if scoreTitle <= (2*MIN_AVG_SCORE - 1):
+            # dont waste time on computing artist score if the title score is already too low to achieve the
+            # average score specified below.  This limit should be
+            # (1 + x)/2 = y
+            # where y is the MIN_AVG_SCORE below and x is this threshold
+            continue
+        seqMatchArtist.set_seq1( simplify( candidate["artist"] ) )
+        scoreArtist = seqMatchArtist.quick_ratio()
         score = (scoreArtist + scoreTitle) /2
-        if score >= 0.8:
-            #logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
+        if score >= MIN_AVG_SCORE:
+            logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
             #logger.debug("candidate: %s"%candidate)
             try:
                 url = api.get_stream_url(candidate["id"])
