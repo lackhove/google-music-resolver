@@ -18,10 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import sys
-import re
-import os
-import time
+import sys,  re,  os
+import time,  datetime
 import pickle
 import json
 import difflib
@@ -67,11 +65,11 @@ def init():
             logger.error("reading pass.txt file failed")
             exit(0)
 
+        loggedIn = api.login(email, password)
+
         if not loggedIn:
             logger.error("Login failed")
             attempts += 1
-
-        loggedIn = api.login(email, password)
 
     return api
 
@@ -93,6 +91,7 @@ def simplify(s):
 
 def fieldSearch(api,  gmLibrary,  request):
     logger.debug("searching for for %s", request)
+    startTime =  datetime.datetime.now()
     results = []
     seqMatchArtist = difflib.SequenceMatcher(None, "foobar", simplify( request["artist"] ))
     seqMatchTitle = difflib.SequenceMatcher(None, "foobar", simplify( request["track"] ))
@@ -103,7 +102,8 @@ def fieldSearch(api,  gmLibrary,  request):
         scoreTitle = seqMatchTitle.quick_ratio()
         score = (scoreArtist + scoreTitle) /2
         if score >= 0.8:
-            logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
+            #logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
+            #logger.debug("candidate: %s"%candidate)
             url = api.get_stream_url(candidate["id"])
             result = {
                 "artist": candidate["artist"],
@@ -127,6 +127,10 @@ def fieldSearch(api,  gmLibrary,  request):
             '_msgtype': 'results'
         }
     printJson(response)
+
+    endTime =  datetime.datetime.now()
+    d =  endTime - startTime
+    logger.info('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
 
 
 def main():
