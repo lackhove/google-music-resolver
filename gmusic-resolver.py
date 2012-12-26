@@ -26,6 +26,9 @@ import difflib
 import logging
 from struct import unpack, pack
 import gmusicapi
+from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+import SocketServer
+from threading import Thread
 
 logger = logging.getLogger('gmusic-resolver')
 hdlr = logging.FileHandler('gmusic-resolver.log')
@@ -35,6 +38,33 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
 MIN_AVG_SCORE = 0.9
+PORT = 8082
+api = gmusicapi.Api()
+
+class getHandler(BaseHTTPRequestHandler):
+  def do_GET(self):
+    id = self.path[1:]
+    logger.info("forwarding stream for id: %s"%id)
+    global api
+    try:
+        url = api.get_stream_url(id)
+    except:
+        logger.error("URL retrieval for id %s failed"%id)
+        url = ""
+    self.send_response(301)
+    self.send_header('Location', url)
+    self.end_headers()
+
+
+class ThreadingHTTPServer(SocketServer.ThreadingMixIn, HTTPServer):
+    pass
+
+
+def serveOnPort(port):
+    server = ThreadingHTTPServer(("localhost",port), getHandler)
+    logger.info("server running on port %d"%port)
+    server.serve_forever()
+
 
 def printJson(o):
     s = json.dumps(o)
@@ -45,7 +75,7 @@ def printJson(o):
 
 
 def init():
-    api = gmusicapi.Api()
+    global api
 
     loggedIn = False
     attempts = 0
@@ -110,12 +140,7 @@ def fieldSearch(api,  gmLibrary,  request):
         score = (scoreArtist + scoreTitle) /2
         if score >= MIN_AVG_SCORE:
             logger.debug("Found: %s - %s : %s - %s : %f,%f,%s"%(request["artist"],  request["track"], candidate["artist"], candidate["title"], scoreArtist, scoreTitle, score))
-            #logger.debug("candidate: %s"%candidate)
-            try:
-                url = api.get_stream_url(candidate["id"])
-            except:
-                logger.error("URL retrieval for %s failed"%candidate)
-                continue
+            url = "http://localhost:" + str(PORT) + "/" + candidate["id"]
             result = {
                 "artist": candidate["artist"],
                 "track": candidate["title"],
@@ -158,6 +183,7 @@ def main():
         printJson(settings)
 
         # Log in to Google Music
+        global api
         api = init()
         if not api.is_authenticated():
             logger.error( "login failed. Exiting")
@@ -181,8 +207,11 @@ def main():
             pickle.dump(gmLibrary, open(filename, "wb" ) )
         logger.info('%d tracks in library'%len(gmLibrary))
 
+        Thread(target=serveOnPort, args=[PORT]).start()
+        logger.info("server running")
+
         while True:
-            logger.debug("waiting for message length")
+            #logger.debug("waiting for message length")
             bigEndianLength = sys.stdin.read(4)
 
             if len(bigEndianLength) < 4:
@@ -194,7 +223,7 @@ def main():
             if not length or not 4096 > length > 0:
                 logger.warn("invalid length: %s", length)
                 break
-            logger.debug("waiting for %s more chars", length)
+            #logger.debug("waiting for %s more chars", length)
             msg = sys.stdin.read(length)
             request = json.loads(msg)
 
