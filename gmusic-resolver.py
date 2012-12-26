@@ -27,7 +27,6 @@ import logging
 from struct import unpack, pack
 import gmusicapi
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-import SocketServer
 from threading import Thread
 
 logger = logging.getLogger('gmusic-resolver')
@@ -55,13 +54,8 @@ class getHandler(BaseHTTPRequestHandler):
     self.send_header('Location', url)
     self.end_headers()
 
-
-class ThreadingHTTPServer(SocketServer.ThreadingMixIn, HTTPServer):
-    pass
-
-
 def serveOnPort(port):
-    server = ThreadingHTTPServer(("localhost",port), getHandler)
+    server = HTTPServer(("localhost",port), getHandler)
     logger.info("server running on port %d"%port)
     server.serve_forever()
 
