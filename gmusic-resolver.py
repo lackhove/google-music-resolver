@@ -168,16 +168,6 @@ def fieldSearch(api,  gmLibrary,  request):
 def main():
 
     try:
-        logger.info("Advertising settings")
-        settings = {
-                    "_msgtype": "settings",
-                    "name": "google music resolver",
-                    "targettime": 100, # ms
-                    "weight": 80,
-                    "icon": "gmusic-logo.png"
-                    }
-        printJson(settings)
-
         # Log in to Google Music
         global api
         api = init()
@@ -203,8 +193,18 @@ def main():
             pickle.dump(gmLibrary, open(filename, "wb" ) )
         logger.info('%d tracks in library'%len(gmLibrary))
 
+        logger.info("Advertising settings")
+        settings = {
+                    "_msgtype": "settings",
+                    "name": "google music resolver",
+                    "targettime": 200, # ms
+                    "weight": 95,
+                    "icon": "gmusic-logo.png"
+                    }
+        printJson(settings)
+
+        # start webserver
         Thread(target=serveOnPort, args=[PORT]).start()
-        logger.info("server running")
 
         while True:
             #logger.debug("waiting for message length")
