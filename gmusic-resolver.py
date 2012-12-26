@@ -178,7 +178,7 @@ def main():
                     "name": "google music resolver",
                     "targettime": 100, # ms
                     "weight": 80,
-                    "logoUrl": "gmusic-logo.png"
+                    "icon": "gmusic-logo.png"
                     }
         printJson(settings)
 
