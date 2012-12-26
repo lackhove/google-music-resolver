@@ -47,12 +47,14 @@ class getHandler(BaseHTTPRequestHandler):
     global api
     try:
         url = api.get_stream_url(id)
+        self.send_response(301)
+        self.send_header('Location', url)
+        self.end_headers()
     except:
         logger.error("URL retrieval for id %s failed"%id)
-        url = ""
-    self.send_response(301)
-    self.send_header('Location', url)
-    self.end_headers()
+        self.send_response(404)
+        self.end_headers()
+
 
 def serveOnPort(port):
     server = HTTPServer(("localhost",port), getHandler)
