@@ -164,7 +164,46 @@ def simplify(s):
     return s
 
 
-def fieldSearch(api,  gmLibrary,  request):
+def fulltextSearch(gmLibrary,  request):
+    logger.debug("fulltext search for for \"%s\"", request['fulltext'])
+    startTime =  datetime.datetime.now()
+
+    hits = api.search(request['fulltext'])
+    songHits = hits['song_hits']
+
+    results = []
+    for candidate in songHits:
+        url = "http://localhost:" + str(PORT) + "/" + candidate["id"]
+        result = {
+                  "artist": candidate["artist"],
+                  "track": candidate["title"],
+                  "album":  candidate["album"],
+                  "duration": candidate["durationMillis"] / 1000,
+                  "score":1,
+                  "url": url
+                  }
+        if candidate["year"] != 0:
+            result["year"] = candidate["year"]
+        if candidate["track"] != 0:
+            result["albumPos"] = candidate["track"]
+        if candidate["disc"] != 0:
+            result["discnumber"] = candidate["disc"]
+        results.append( result )
+
+
+    response = {
+            'qid': request['qid'],
+            'results': results,
+            '_msgtype': 'results'
+        }
+    printJson(response)
+
+    endTime =  datetime.datetime.now()
+    d =  endTime - startTime
+    logger.info('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
+
+
+def fieldSearch(gmLibrary,  request):
     logger.debug("searching for for %s", request)
     startTime =  datetime.datetime.now()
     results = []
@@ -255,10 +294,9 @@ def main():
                     request)
             elif gmLibrary and request['_msgtype'] == 'rq': # Search
                 if 'fulltext' in request:
-                    logger.debug("not handling searches for now")
-                    continue
+                    fulltextSearch(gmLibrary,  request)
                 else:
-                    fieldSearch(api,  gmLibrary,  request)
+                    fieldSearch( gmLibrary,  request)
             elif request['_msgtype'] == 'config':
                 logger.debug("ignoring config message: %s", request)
             elif request['_msgtype'] == 'setpref':
