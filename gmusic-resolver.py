@@ -171,8 +171,16 @@ def fulltextSearch(gmLibrary,  request):
     hits = api.search(request['fulltext'])
     songHits = hits['song_hits']
 
+    seqMatchTitle = difflib.SequenceMatcher(None, "foobar", simplify( request["track"] ))
+    # gmusic api is weird here: when searchin for an artist, it returns song_hits, when
+    # searching for an album it does. Since the fulltext search in tomahawk is mainly used
+    # for tracks, we filter out song_hits which match the album name only.
     results = []
     for candidate in songHits:
+        seqMatchTitle.set_seq1( simplify( candidate["title"] ) )
+        score = seqMatchTitle.quick_ratio()
+        if not score >= MIN_AVG_SCORE/2:
+            continue
         url = "http://localhost:" + str(PORT) + "/" + candidate["id"]
         result = {
                   "artist": candidate["artist"],
