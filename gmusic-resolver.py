@@ -20,6 +20,7 @@
 
 import sys,  re,  os
 import base64
+import keyring
 import time,  datetime
 import pickle
 import json
@@ -71,27 +72,31 @@ def printJson(o):
     sys.stdout.flush()
 
 
-def init(request,):
+def init(request):
 
     if not request:
         # read credentials from keyring
         try:
-            emailFile = open("email.txt")
-            username= emailFile.readline()
+            userFile = open("username.txt")
+            username= userFile.readline()
+            userFile.close()
         except IOError:
-            logger.error("reading email.txt file failed")
-            username = ""
+            logger.error("reading username.txt file failed")
             return None
 
-        try:
-            pwFile = open("pass.txt")
-            password = pwFile.readline()
-        except IOError:
-            logger.error("reading pass.txt file failed")
+        password = keyring.get_password('gmusic-resolver', username)
+        if not password:
+            logger.error("no password for user %s found in keyring"%username)
             return None
     else:
         password = request["widgets"]["passwordLineEdit"]["text"]
         username = request["widgets"]["usernameLineEdit"]["text"]
+
+        # store creds to config and keyring
+        userFile = open("username.txt", 'w')
+        userFile.write(username)
+        userFile.close()
+        keyring.set_password('gmusic-resolver', username,  password)
 
     # Log in to Google Music
     global api
