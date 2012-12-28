@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import sys,  re,  os
+import base64
 import time,  datetime
 import pickle
 import json
@@ -206,6 +207,18 @@ def main():
         # start webserver
         Thread(target=serveOnPort, args=[PORT]).start()
 
+        # send config ui
+        try:
+            uiFile = open("config.ui")
+            configUi = uiFile.read()
+        except IOError:
+            logger.error("reading config.ui file failed")
+            exit(0)
+        confwidget = {
+                "_msgtype": "confwidget",
+                "compressed": "false",
+                "widget": base64.b64encode(configUi)}
+        printJson(confwidget)
         while True:
             #logger.debug("waiting for message length")
             bigEndianLength = sys.stdin.read(4)
