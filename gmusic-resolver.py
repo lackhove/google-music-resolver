@@ -216,8 +216,9 @@ def main():
                 api.logout()
                 exit(0)
             length = unpack("!L", bigEndianLength)[0]
-            if not length or not 4096 > length > 0:
+            if not length or not length > 0:
                 logger.warn("invalid length: %s", length)
+                logger.info(sys.stdin.read(length))
                 break
             #logger.debug("waiting for %s more chars", length)
             msg = sys.stdin.read(length)
