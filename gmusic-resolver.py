@@ -71,35 +71,77 @@ def printJson(o):
     sys.stdout.flush()
 
 
-def init():
-    global api
+def init(request,):
 
-    loggedIn = False
-    attempts = 0
-
-    while not loggedIn and attempts < 3:
-
+    if not request:
+        # read credentials from keyring
         try:
             emailFile = open("email.txt")
-            email = emailFile.readline()
+            username= emailFile.readline()
         except IOError:
             logger.error("reading email.txt file failed")
-            exit(0)
+            username = ""
+            return None
 
         try:
             pwFile = open("pass.txt")
             password = pwFile.readline()
         except IOError:
             logger.error("reading pass.txt file failed")
-            exit(0)
+            return None
+    else:
+        password = request["widgets"]["passwordLineEdit"]["text"]
+        username = request["widgets"]["usernameLineEdit"]["text"]
 
-        loggedIn = api.login(email, password)
+    # Log in to Google Music
+    global api
+    loggedIn = False
+    attempts = 1
 
+    while not loggedIn and attempts <= 3:
+
+        loggedIn = api.login(username, password)
         if not loggedIn:
-            logger.error("Login failed")
+            logger.error("Login attempt # %dfailed"%attempts)
             attempts += 1
 
-    return api
+    if not api.is_authenticated():
+        logger.error( "login failed. Waiting for user input")
+        return None
+    logger.info("login succeeded")
+
+    # Get all songs in the library
+    gmLibrary = []
+    filename = "gmLibrary.p"
+    if os.path.exists(filename):
+        t = os.path.getmtime(filename)
+        age = time.time() - t
+        logger.info("cached library age: %d seconds"%age)
+        if age <= 3600:
+            gmLibrary = pickle.load(open(filename) )
+            logger.info("loaded library tracks from file")
+
+    if len(gmLibrary) == 0:
+        logger.info("retrieving library tracks from google")
+        gmLibrary = api.get_all_songs()
+        pickle.dump(gmLibrary, open(filename, "wb" ) )
+    logger.info('%d tracks in library'%len(gmLibrary))
+
+    # tell tomahawk that we are ready
+    logger.info("Advertising settings")
+    settings = {
+                "_msgtype": "settings",
+                "name": "google music resolver",
+                "targettime": 200, # ms
+                "weight": 95,
+                "icon": "gmusic-logo.png"
+                }
+    printJson(settings)
+
+    # start webserver
+    Thread(target=serveOnPort, args=[PORT]).start()
+
+    return gmLibrary
 
 
 def simplify(s):
@@ -169,43 +211,6 @@ def fieldSearch(api,  gmLibrary,  request):
 def main():
 
     try:
-        # Log in to Google Music
-        global api
-        api = init()
-        if not api.is_authenticated():
-            logger.error( "login failed. Exiting")
-            exit(0)
-        logger.info("login succeeded")
-
-        # Get all songs in the library
-        gmLibrary = []
-        filename = "gmLibrary.p"
-        if os.path.exists(filename):
-            t = os.path.getmtime(filename)
-            age = time.time() - t
-            logger.info("cached library age: %d seconds"%age)
-            if age <= 3600:
-                gmLibrary = pickle.load(open(filename) )
-                logger.info("loaded library tracks from file")
-
-        if len(gmLibrary) == 0:
-            logger.info("retrieving library tracks from google")
-            gmLibrary = api.get_all_songs()
-            pickle.dump(gmLibrary, open(filename, "wb" ) )
-        logger.info('%d tracks in library'%len(gmLibrary))
-
-        logger.info("Advertising settings")
-        settings = {
-                    "_msgtype": "settings",
-                    "name": "google music resolver",
-                    "targettime": 200, # ms
-                    "weight": 95,
-                    "icon": "gmusic-logo.png"
-                    }
-        printJson(settings)
-
-        # start webserver
-        Thread(target=serveOnPort, args=[PORT]).start()
 
         # send config ui
         try:
@@ -219,6 +224,9 @@ def main():
                 "compressed": "false",
                 "widget": base64.b64encode(configUi)}
         printJson(confwidget)
+
+        # the main loop
+        gmLibrary = init(None)
         while True:
             #logger.debug("waiting for message length")
             bigEndianLength = sys.stdin.read(4)
@@ -240,7 +248,7 @@ def main():
             if '_msgtype' not in request:
                 logger.warn("malformed request (no _msgtype): %s",
                     request)
-            elif request['_msgtype'] == 'rq': # Search
+            elif gmLibrary and request['_msgtype'] == 'rq': # Search
                 if 'fulltext' in request:
                     logger.debug("not handling searches for now")
                     continue
@@ -248,6 +256,8 @@ def main():
                     fieldSearch(api,  gmLibrary,  request)
             elif request['_msgtype'] == 'config':
                 logger.debug("ignoring config message: %s", request)
+            elif request['_msgtype'] == 'setpref':
+                gmLibrary = init(request)
             elif request['_msgtype'] == 'quit':
                 logger.info("Asked to Quit. Exiting.")
                 api.logout()
