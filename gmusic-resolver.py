@@ -102,6 +102,9 @@ def init(request):
     global api
     loggedIn = False
     attempts = 1
+    if api.is_authenticated():
+        api.logout()
+        api = gmusicapi.Api()
 
     while not loggedIn and attempts <= 3:
 
