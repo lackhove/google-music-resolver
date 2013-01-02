@@ -136,7 +136,7 @@ def init(request):
     logger.info("Advertising settings")
     settings = {
                 "_msgtype": "settings",
-                "name": "google music resolver",
+                "name": "Google Music",
                 "targettime": 200, # ms
                 "weight": 95,
                 "icon": "gmusic-logo.png"
@@ -268,13 +268,17 @@ def main():
         try:
             uiFile = open("config.ui")
             configUi = uiFile.read()
+            logoFile = open('gmusic-logo.png')
+            logo = logoFile.read()
         except IOError:
-            logger.error("reading config.ui file failed")
+            logger.error("reading ui files failed")
             exit(0)
         confwidget = {
                 "_msgtype": "confwidget",
                 "compressed": "false",
-                "widget": base64.b64encode(configUi)}
+                "widget": base64.b64encode(configUi),
+                "images": {"gmusic-logo.png": base64.b64encode(logo)}
+                }
         printJson(confwidget)
 
         # the main loop
