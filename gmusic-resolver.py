@@ -36,7 +36,7 @@ hdlr = logging.FileHandler('gmusic-resolver.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARN)
 
 MIN_AVG_SCORE = 0.9
 PORT = 8082
@@ -45,7 +45,7 @@ api = gmusicapi.Api()
 class getHandler(BaseHTTPRequestHandler):
   def do_GET(self):
     id = self.path[1:]
-    logger.info("forwarding stream for id: %s"%id)
+    logger.debug("forwarding stream for id: %s"%id)
     global api
     try:
         url = api.get_stream_url(id)
@@ -53,7 +53,7 @@ class getHandler(BaseHTTPRequestHandler):
         self.send_header('Location', url)
         self.end_headers()
     except:
-        logger.error("URL retrieval for id %s failed"%id)
+        logger.exception("URL retrieval for id %s failed"%id)
         self.send_response(404)
         self.end_headers()
 
@@ -81,12 +81,12 @@ def init(request):
             username= userFile.readline()
             userFile.close()
         except IOError:
-            logger.error("reading username.txt file failed")
+            logger.warn("reading username.txt file failed")
             return None
 
         password = keyring.get_password('gmusic-resolver', username)
         if not password:
-            logger.error("no password for user %s found in keyring"%username)
+            logger.warn("no password for user %s found in keyring"%username)
             return None
     else:
         password = request["widgets"]["passwordLineEdit"]["text"]
@@ -110,7 +110,7 @@ def init(request):
 
         loggedIn = api.login(username, password)
         if not loggedIn:
-            logger.error("Login attempt # %dfailed"%attempts)
+            logger.warn("Login attempt # %dfailed"%attempts)
             attempts += 1
 
     if not api.is_authenticated():
@@ -124,7 +124,7 @@ def init(request):
     if os.path.exists(filename):
         t = os.path.getmtime(filename)
         age = time.time() - t
-        logger.info("cached library age: %d seconds"%age)
+        logger.debug("cached library age: %d seconds"%age)
         if age <= 3600:
             gmLibrary = pickle.load(open(filename) )
             logger.info("loaded library tracks from file")
@@ -211,7 +211,7 @@ def fulltextSearch(gmLibrary,  request):
 
     endTime =  datetime.datetime.now()
     d =  endTime - startTime
-    logger.info('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
+    logger.debug('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
 
 
 def fieldSearch(gmLibrary,  request):
@@ -260,12 +260,14 @@ def fieldSearch(gmLibrary,  request):
 
     endTime =  datetime.datetime.now()
     d =  endTime - startTime
-    logger.info('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
+    logger.debug('Found %d tracks in %d ms'%(len(results), d.microseconds/1000 ))
 
 
 def main():
 
     try:
+
+        logger.info('gmusic resolver started')
 
         # send config ui
         try:
@@ -274,7 +276,7 @@ def main():
             logoFile = open('gmusic-logo.png')
             logo = logoFile.read()
         except IOError:
-            logger.error("reading ui files failed")
+            logger.exception("reading ui files failed")
             exit(0)
         confwidget = {
                 "_msgtype": "confwidget",
@@ -291,14 +293,14 @@ def main():
             bigEndianLength = sys.stdin.read(4)
 
             if len(bigEndianLength) < 4:
-                logger.debug("No length given (%r==EOF?). Exiting.",
+                logger.error("No length given (%r==EOF?). Exiting.",
                         bigEndianLength)
                 api.logout()
                 exit(0)
             length = unpack("!L", bigEndianLength)[0]
             if not length or not length > 0:
                 logger.warn("invalid length: %s", length)
-                logger.info(sys.stdin.read(length))
+                logger.warn(sys.stdin.read(length))
                 break
             #logger.debug("waiting for %s more chars", length)
             msg = sys.stdin.read(length)
