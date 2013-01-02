@@ -40,6 +40,7 @@ logger.setLevel(logging.WARN)
 
 MIN_AVG_SCORE = 0.9
 PORT = 8082
+MAX_LIB_AGE = 120
 api = gmusicapi.Api()
 
 class getHandler(BaseHTTPRequestHandler):
@@ -125,7 +126,7 @@ def init(request):
         t = os.path.getmtime(filename)
         age = time.time() - t
         logger.debug("cached library age: %d seconds"%age)
-        if age <= 3600:
+        if age <= MAX_LIB_AGE:
             gmLibrary = pickle.load(open(filename) )
             logger.info("loaded library tracks from file")
 
