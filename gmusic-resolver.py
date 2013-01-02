@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # gmusic-resolver
@@ -28,8 +28,12 @@ import difflib
 import logging
 from struct import unpack, pack
 import gmusicapi
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
+
+if sys.version_info >= (3,): # python 3
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+else: # python 2
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 
 logger = logging.getLogger('gmusic-resolver')
 hdlr = logging.FileHandler('gmusic-resolver.log')
