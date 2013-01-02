@@ -18,29 +18,33 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import sys,  re,  os
-import base64
-import keyring
-import time,  datetime
-import pickle
-import json
-import difflib
 import logging
-from struct import unpack, pack
-import gmusicapi
-from threading import Thread
-
-if sys.version_info >= (3,): # python 3
-    from http.server import HTTPServer, BaseHTTPRequestHandler
-else: # python 2
-    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-
 logger = logging.getLogger('gmusic-resolver')
 hdlr = logging.FileHandler('gmusic-resolver.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.WARN)
+
+try:
+    import sys,  re,  os
+    import base64
+    import keyring
+    import time,  datetime
+    import pickle
+    import json
+    import difflib
+    from struct import unpack, pack
+    import gmusicapi
+    from threading import Thread
+
+    if sys.version_info >= (3,): # python 3
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+    else: # python 2
+        from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+except:
+    logger.exception("module import failed. You are probalby missing a dependency")
+    exit(1)
 
 MIN_AVG_SCORE = 0.9
 MIN_FULLTEXT_SCORE = 0.7
@@ -285,7 +289,7 @@ def main():
             logo = logoFile.read()
         except IOError:
             logger.exception("reading ui files failed")
-            exit(0)
+            exit(1)
         confwidget = {
                 "_msgtype": "confwidget",
                 "compressed": "false",
@@ -304,7 +308,7 @@ def main():
                 logger.error("No length given (%r==EOF?). Exiting.",
                         bigEndianLength)
                 api.logout()
-                exit(0)
+                exit(1)
             length = unpack("!L", bigEndianLength)[0]
             if not length or not length > 0:
                 logger.warn("invalid length: %s", length)
