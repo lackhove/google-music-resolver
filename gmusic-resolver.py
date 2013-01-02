@@ -43,6 +43,7 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.WARN)
 
 MIN_AVG_SCORE = 0.9
+MIN_FULLTEXT_SCORE = 0.7
 PORT = 8082
 MAX_LIB_AGE = 120
 api = gmusicapi.Api()
@@ -175,36 +176,38 @@ def simplify(s):
 def fulltextSearch(gmLibrary,  request):
     logger.debug("fulltext search for for \"%s\"", request['fulltext'])
     startTime =  datetime.datetime.now()
+    seqMatchFulltext = difflib.SequenceMatcher(None, "foobar", simplify( request['fulltext'] ))
 
-    hits = api.search(request['fulltext'])
-    songHits = hits['song_hits']
-
-    seqMatchTitle = difflib.SequenceMatcher(None, "foobar", simplify( request["track"] ))
-    # gmusic api is weird here: when searchin for an artist, it returns song_hits, when
-    # searching for an album it does. Since the fulltext search in tomahawk is mainly used
-    # for tracks, we filter out song_hits which match the album name only.
+    # the search function in the gmusic-api is not satisfying (e.g. doesnt match artists, is not
+    # error-tolerant enough...), so we use our own implementation for the meantime. Nice side-effect:
+    # less load for google music servers and faster search for small collections (~5000 tracks)
     results = []
-    for candidate in songHits:
-        seqMatchTitle.set_seq1( simplify( candidate["title"] ) )
-        score = seqMatchTitle.quick_ratio()
-        if not score >= MIN_AVG_SCORE/2:
-            continue
-        url = "http://localhost:" + str(PORT) + "/" + candidate["id"]
-        result = {
-                  "artist": candidate["artist"],
-                  "track": candidate["title"],
-                  "album":  candidate["album"],
-                  "duration": candidate["durationMillis"] / 1000,
-                  "score":1,
-                  "url": url
-                  }
-        if candidate["year"] != 0:
-            result["year"] = candidate["year"]
-        if candidate["track"] != 0:
-            result["albumPos"] = candidate["track"]
-        if candidate["disc"] != 0:
-            result["discnumber"] = candidate["disc"]
-        results.append( result )
+    for candidate in gmLibrary:
+        seqMatchFulltext.set_seq1( simplify( candidate["title"] ) )
+        score = seqMatchFulltext.quick_ratio()
+        seqMatchFulltext.set_seq1( simplify( candidate["artist"] ) )
+        score = max( score,  seqMatchFulltext.quick_ratio() )
+        seqMatchFulltext.set_seq1( simplify( candidate["album"] ) )
+        score = max( score,  seqMatchFulltext.quick_ratio() )
+
+        if score >= MIN_FULLTEXT_SCORE:
+            logger.debug("Found: %s : %s - %s - %s : %f"%(request["fulltext"],  candidate["artist"], candidate["album"],  candidate["title"], score))
+            url = "http://localhost:" + str(PORT) + "/" + candidate["id"]
+            result = {
+                      "artist": candidate["artist"],
+                      "track": candidate["title"],
+                      "album":  candidate["album"],
+                      "duration": candidate["durationMillis"] / 1000,
+                      "score":1,
+                      "url": url
+                      }
+            if candidate["year"] != 0:
+                result["year"] = candidate["year"]
+            if candidate["track"] != 0:
+                result["albumPos"] = candidate["track"]
+            if candidate["disc"] != 0:
+                result["discnumber"] = candidate["disc"]
+            results.append( result )
 
 
     response = {
