@@ -146,13 +146,21 @@ def init(request):
     logger.info('%d tracks in library'%len(gmLibrary))
 
     # tell tomahawk that we are ready
+    try:
+        logoFile = open(os.path.join(os.path.dirname(__file__),'gmusic-logo.png'))
+        logo = logoFile.read()
+    except IOError:
+        logger.exception("reading icon file failed")
+        api.logout()
+        exit(1)
     logger.info("Advertising settings")
     settings = {
                 "_msgtype": "settings",
                 "name": "Google Music",
                 "targettime": 200, # ms
                 "weight": 95,
-                "icon": "gmusic-logo.png"
+                "icon": base64.b64encode(logo),
+                "compressed": "false"
                 }
     printJson(settings)
 
