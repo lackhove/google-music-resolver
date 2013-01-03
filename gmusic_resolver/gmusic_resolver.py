@@ -283,9 +283,9 @@ def main():
 
         # send config ui
         try:
-            uiFile = open("config.ui")
+            uiFile = open(os.path.join(os.path.dirname(__file__),'config.ui'))
             configUi = uiFile.read()
-            logoFile = open('gmusic-logo.png')
+            logoFile = open(os.path.join(os.path.dirname(__file__),'gmusic-logo.png'))
             logo = logoFile.read()
         except IOError:
             logger.exception("reading ui files failed")
