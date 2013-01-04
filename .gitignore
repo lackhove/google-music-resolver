@@ -33,11 +33,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-*.pyc
 *.p
-*.e4p
-*.e5p
+*.e[45][pqt]
 *.log
 *~
-email.txt
-pass.txt
+username.txt
+*.bak

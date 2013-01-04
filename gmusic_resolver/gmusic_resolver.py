@@ -18,16 +18,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import logging
+import os,  logging
+
+SHAREPATH = os.path.join( os.path.expanduser('~'), '.local', 'share', 'Tomahawk')
+CONFPATH = os.path.join( os.path.expanduser('~'), '.config', 'Tomahawk')
+os.chdir(SHAREPATH)
+
 logger = logging.getLogger('gmusic-resolver')
-hdlr = logging.FileHandler('gmusic-resolver.log')
+hdlr = logging.FileHandler(os.path.join( SHAREPATH, 'gmusic-resolver.log'))
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.WARN)
 
 try:
-    import sys,  re,  os
+    import sys,  re
     import base64
     import keyring
     import time,  datetime
@@ -87,7 +92,7 @@ def init(request):
     if not request:
         # read credentials from keyring
         try:
-            userFile = open("username.txt")
+            userFile = open(os.path.join( CONFPATH, 'username.txt'))
             username= userFile.readline()
             userFile.close()
         except IOError:
@@ -103,7 +108,7 @@ def init(request):
         username = request["widgets"]["usernameLineEdit"]["text"]
 
         # store creds to config and keyring
-        userFile = open("username.txt", 'w')
+        userFile = open(os.path.join( CONFPATH, 'username.txt'), 'w')
         userFile.write(username)
         userFile.close()
         keyring.set_password('gmusic-resolver', username,  password)
@@ -130,7 +135,7 @@ def init(request):
 
     # Get all songs in the library
     gmLibrary = []
-    filename = "gmLibrary.p"
+    filename = os.path.join( SHAREPATH, 'gmusic-library.p')
     if os.path.exists(filename):
         t = os.path.getmtime(filename)
         age = time.time() - t
@@ -291,9 +296,9 @@ def main():
 
         # send config ui
         try:
-            uiFile = open("config.ui")
+            uiFile = open(os.path.join(os.path.dirname(__file__),'config.ui'))
             configUi = uiFile.read()
-            logoFile = open('gmusic-logo.png')
+            logoFile = open(os.path.join(os.path.dirname(__file__),'gmusic-logo.png'))
             logo = logoFile.read()
         except IOError:
             logger.exception("reading ui files failed")
