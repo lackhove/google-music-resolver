@@ -52,7 +52,7 @@ except:
     exit(1)
 
 MIN_AVG_SCORE = 0.9
-MIN_FULLTEXT_SCORE = 0.7
+MIN_FULLTEXT_SCORE = 0.8
 PORT = 8082
 MAX_LIB_AGE = 120
 api = gmusicapi.Api()
