@@ -58,19 +58,26 @@ MAX_LIB_AGE = 120
 api = gmusicapi.Api()
 
 class getHandler(BaseHTTPRequestHandler):
-  def do_GET(self):
-    id = self.path[1:]
-    logger.debug("forwarding stream for id: %s"%id)
-    global api
-    try:
-        url = api.get_stream_url(id)
-        self.send_response(301)
-        self.send_header('Location', url)
-        self.end_headers()
-    except:
-        logger.exception("URL retrieval for id %s failed"%id)
-        self.send_response(404)
-        self.end_headers()
+    def do_GET(self):
+        pattern = re.compile(r'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})')
+        reg = re.search(pattern, self.path)
+        if not reg:
+            logger.exception('invalid id requested: %s'%self.path)
+            self.send_response(404)
+            self.end_headers()
+
+        id = reg.group(1)
+        logger.debug("forwarding stream for id: %s"%id)
+        global api
+        try:
+            url = api.get_stream_url(id)
+            self.send_response(301)
+            self.send_header('Location', url)
+            self.end_headers()
+        except:
+            logger.exception("URL retrieval for id %s failed"%id)
+            self.send_response(404)
+            self.end_headers()
 
 
 def serveOnPort(port):
