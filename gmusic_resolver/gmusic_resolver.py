@@ -29,7 +29,7 @@ hdlr = logging.FileHandler(os.path.join( SHAREPATH, 'gmusic-resolver.log'))
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.INFO)
 
 try:
     import sys,  re
@@ -53,9 +53,10 @@ except:
 
 MIN_AVG_SCORE = 0.9
 MIN_FULLTEXT_SCORE = 0.8
-PORT = 8082
+PORT = 8099
 MAX_LIB_AGE = 120
-api = gmusicapi.Api()
+api = gmusicapi.Webclient()
+HTTP_THREAD = None
 
 class getHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -81,9 +82,12 @@ class getHandler(BaseHTTPRequestHandler):
 
 
 def serveOnPort(port):
-    server = HTTPServer(("localhost",port), getHandler)
-    logger.info("server running on port %d"%port)
-    server.serve_forever()
+    try:
+        server = HTTPServer(("localhost", port), getHandler)
+        logger.info("server running on port %d"%port)
+        server.serve_forever()
+    except Exception as ex:
+        logger.exception(ex)
 
 
 def printJson(o):
@@ -126,7 +130,7 @@ def init(request):
     attempts = 1
     if api.is_authenticated():
         api.logout()
-        api = gmusicapi.Api()
+        api = gmusicapi.Webclient()
 
     while not loggedIn and attempts <= 3:
 
@@ -177,7 +181,7 @@ def init(request):
     printJson(settings)
 
     # start webserver
-    Thread(target=serveOnPort, args=[PORT]).start()
+    HTTP_THREAD = Thread(target=serveOnPort, args=[PORT]).start()
 
     return gmLibrary
 
