@@ -12,7 +12,7 @@ setup(
     package_data = {'': ['*.ui', '*.png']},
     entry_points = {'console_scripts': ['gmusic-resolver = gmusic_resolver.gmusic_resolver:main']},
     install_requires=[
-        "gmusicapi>= 2012.11.09",
+        "gmusicapi>= 1.0.0",
         "keyring >= 0.10"],
     zip_safe = False,
 )
