@@ -55,7 +55,7 @@ MIN_AVG_SCORE = 0.9
 MIN_FULLTEXT_SCORE = 0.8
 PORT = 8082
 MAX_LIB_AGE = 120
-api = gmusicapi.Api()
+api = gmusicapi.Webclient()
 
 class getHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -126,7 +126,7 @@ def init(request):
     attempts = 1
     if api.is_authenticated():
         api.logout()
-        api = gmusicapi.Api()
+        api = gmusicapi.Webclient()
 
     while not loggedIn and attempts <= 3:
 
