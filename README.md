@@ -13,16 +13,10 @@ Please report bugs, wishes and issues [here](https://github.com/crabmanX/google-
 
 Requirements:
 
-* Unofficial Google Music API [Unofficial Google Music API](https://github.com/simon-weber/Unofficial-Google-Music-API)
+* Unofficial Google Music API [Unofficial Google Music API](https://github.com/simon-weber/Unofficial-Google-Music-API), currently only version < 2012.11.09 supported. Check Morguls repo for a [branch](https://github.com/Morgul/google-music-resolver) that works with the lastest API.
 * [keyring](http://pypi.python.org/pypi/keyring)
 * Python 2.7 or 3.3 (other versions might work, but are untested
 * [Tomahawk](http://www.tomahawk-player.org/)
-
-You can use [pip](http://www.pip-installer.org/en/latest/) to automatically install all dependencies and google-music-resolver
-
-```
-pip install https://github.com/crabmanX/google-music-resolver/tarball/master
-```
 
 ###Getting Started
 
